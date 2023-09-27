@@ -6,6 +6,10 @@ import { SectionTitle } from '../section-title'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import axios from 'axios'
+import { toast } from 'react-hot-toast'
+import { motion } from 'framer-motion'
+import { fadeUpAnimation } from '@/app/lib/animations'
 
 const contactFormSchema = z.object({
   name: z.string().min(3).max(100),
@@ -16,10 +20,23 @@ const contactFormSchema = z.object({
 type ContactFormData = z.infer<typeof contactFormSchema>
 
 export function ContactForm() {
-  const { handleSubmit, register } = useForm<ContactFormData>({
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
   })
-  const onSubmit = (data: ContactFormData) => {}
+  const onSubmit = async (data: ContactFormData) => {
+    try {
+      await axios.post('/api/contact', data)
+      toast.success('Mensagem enviada com sucesso!')
+      reset()
+    } catch {
+      toast.error('Ocorreu um erro ao enviar a mensagem. Tente novamente.')
+    }
+  }
 
   return (
     <section
@@ -32,9 +49,10 @@ export function ContactForm() {
           title="Vamos trabalhar juntos? Entre em contato"
           className="items-center text-center"
         />
-        <form
+        <motion.form
           onSubmit={handleSubmit(onSubmit)}
           className="mt-12 w-ful flex flex-col gap-4"
+          {...fadeUpAnimation}
         >
           <input
             placeholder="Nome"
@@ -53,11 +71,14 @@ export function ContactForm() {
             maxLength={500}
             {...register('message')}
           />
-          <Button className="w-max mx-auto mt-6 shadow-button">
+          <Button
+            disabled={isSubmitting}
+            className="w-max mx-auto mt-6 shadow-button"
+          >
             Enviar mensagem
             <HiArrowNarrowRight />
           </Button>
-        </form>
+        </motion.form>
       </div>
     </section>
   )
